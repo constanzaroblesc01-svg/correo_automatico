@@ -12,7 +12,7 @@ def check_login():
         password = st.text_input("Contraseña", type="password")
 
         if st.button("Ingresar"):
-            if usuario == "cliente" and password == "correo2024":
+            if usuario == "LaCasadelActor" and password == "correo2026":
                 st.session_state.logged_in = True
                 st.rerun()
             else:
@@ -731,3 +731,4 @@ with tabs[3]:
     st.text_area("Logs", value=get_logs(), height=520)
 
     st.markdown('</div>', unsafe_allow_html=True)
+
