@@ -1,3 +1,29 @@
+import streamlit as st
+
+# LOGIN SIMPLE
+def check_login():
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+
+    if not st.session_state.logged_in:
+        st.title("🔐 Acceso a la herramienta")
+
+        usuario = st.text_input("Usuario")
+        password = st.text_input("Contraseña", type="password")
+
+        if st.button("Ingresar"):
+            if usuario == "cliente" and password == "correo2024":
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Usuario o contraseña incorrectos")
+
+        st.stop()
+
+check_login()
+
+
+
 from pathlib import Path
 import json
 import subprocess
@@ -703,4 +729,5 @@ with tabs[3]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Registros del sistema</div>', unsafe_allow_html=True)
     st.text_area("Logs", value=get_logs(), height=520)
+
     st.markdown('</div>', unsafe_allow_html=True)
