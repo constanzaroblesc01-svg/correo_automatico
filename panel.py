@@ -528,20 +528,20 @@ with st.sidebar:
         try:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
+                df_norm["asunto"] = asunto_global
+                df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
+                df_norm["send_at"] = send_at_global
+                df_norm["estado"] = "PENDIENTE"
 
-df_norm["asunto"] = asunto_global
-df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
-df_norm["send_at"] = send_at_global
-df_norm["estado"] = "PENDIENTE"
+                   if df_norm.empty:
+            st.warning("El archivo no contiene datos válidos.")
+        else:
+            save_csv(df_norm)
+            st.success("Archivo cargado correctamente.")
+            st.rerun()
 
-            if df_norm.empty:
-                st.warning("El archivo no contiene datos válidos.")
-            else:
-                save_csv(df_norm)
-                st.success("Archivo cargado correctamente.")
-                st.rerun()
-        except Exception as e:
-            st.error(f"No se pudo cargar el archivo: {e}")
+    except Exception as e:
+        st.error(f"No se pudo cargar el archivo: {e}")
 
     plantilla_df = build_template_df()
     plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
