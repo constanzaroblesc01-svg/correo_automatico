@@ -34,6 +34,21 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+import base64
+
+def banner_html(file):
+    if file is None:
+        return ""
+
+    data = base64.b64encode(file.read()).decode()
+
+    return f"""
+    <br><br>
+    <img src="data:image/png;base64,{data}" style="max-width:600px;border-radius:10px;">
+    """
+
+
+
 BASE_DIR = Path(__file__).resolve().parent
 CSV_FILE = BASE_DIR / "envios.csv"
 LOG_FILE = BASE_DIR / "mailer.log"
@@ -208,18 +223,9 @@ def get_logs():
 def build_template_df():
     return pd.DataFrame(
         [{
-            "id": 1,
-            "email": "cliente@correo.com",
-            "nombre": "Juan",
-            "asunto": "Hola {{nombre}}",
-            "mensaje": "Hola {{nombre}}, este es un correo programado.",
-            "send_at": "2026-03-10 10:30",
-            "adjunto": "",
-            "reintentos": 0,
-            "estado": "PENDIENTE",
-            "ultimo_error": "",
+            "email": "cliente@correo.com"
         }],
-        columns=COLUMNAS,
+        columns=["email"]
     )
 
 
@@ -522,14 +528,15 @@ with st.sidebar:
         try:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
-            if df_norm.empty:
-                st.warning("El archivo no contiene datos válidos.")
-            else:
-                save_csv(df_norm)
-                st.success("Archivo cargado correctamente.")
-                st.rerun()
-        except Exception as e:
-            st.error(f"No se pudo cargar el archivo: {e}")
+
+if "asunto_global" in st.session_state:
+    df_norm["asunto"] = st.session_state.asunto_global
+
+if "mensaje_global" in st.session_state:
+    df_norm["mensaje"] = st.session_state.mensaje_global + banner_html(banner_file)
+
+df_norm["send_at"] = send_at_global
+df_norm["estado"] = "PENDIENTE"
 
     plantilla_df = build_template_df()
     plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
@@ -607,6 +614,7 @@ with tabs[0]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Configuración del correo remitente</div>', unsafe_allow_html=True)
 
+
     st.selectbox(
         "Proveedor de correo",
         list(PROVEEDORES.keys()),
@@ -641,6 +649,62 @@ Cuando termine, haga clic en <b>Guardar configuración</b>.
 
     st.write("")
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+st.write("")
+st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
+
+asunto_global = st.text_input(
+    "Asunto del correo",
+    key="asunto_global"
+)
+
+mensaje_global = st.text_area(
+    "Mensaje del correo",
+    height=220,
+    key="mensaje_global"
+)
+
+col_fecha, col_hora = st.columns(2)
+
+with col_fecha:
+    fecha_envio = st.date_input("Fecha de envío")
+
+with col_hora:
+    hora_envio = st.time_input("Hora de envío")
+
+send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
+
+st.markdown('</div>', unsafe_allow_html=True)
+st.write("")
+st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
+
+banner_file = st.file_uploader(
+    "Subir banner del correo",
+    type=["png", "jpg", "jpeg"]
+)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+st.write("")
+st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Vista previa del correo</div>', unsafe_allow_html=True)
+
+firma = banner_html(banner_file)
+
+st.markdown(
+    mensaje_global + firma,
+    unsafe_allow_html=True
+)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+
+
+
+
+
+
     st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
 
     if issues:
@@ -731,4 +795,6 @@ with tabs[3]:
     st.text_area("Logs", value=get_logs(), height=520)
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+
 
