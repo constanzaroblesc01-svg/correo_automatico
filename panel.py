@@ -706,13 +706,13 @@ st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
 
-    if issues:
-        for issue in issues:
-            st.error(issue)
-    else:
-        st.success("Todo está listo para enviar. Puede usar el botón 'Enviar correos' del lado izquierdo.")
+if issues:
+    for issue in issues:
+        st.error(issue)
+else:
+    st.success("Todo está listo para enviar. Puede usar el botón 'Enviar correos' del lado izquierdo.")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[1]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
