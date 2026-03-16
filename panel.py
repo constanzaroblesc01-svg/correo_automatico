@@ -524,7 +524,98 @@ with st.sidebar:
         type=["xlsx", "csv"],
         help="Puede cargar un archivo Excel (.xlsx) o CSV."
     )
-if uploaded is not None:
+
+    if uploaded is not None:
+        try:
+            df_raw = read_input_file(uploaded)
+            df_norm = normalize_dataframe(df_raw)
+
+            df_norm["asunto"] = asunto_global
+            df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
+            df_norm["send_at"] = send_at_global
+            df_norm["estado"] = "PENDIENTE"
+
+            if df_norm.empty:
+                st.warning("El archivo no contiene datos válidos.")
+            else:
+                save_csv(df_norm)
+                st.success("Archivo cargado correctamente.")
+                st.rerun()
+
+        except Exception as e:
+            st.error(f"No se pudo cargar el archivo: {e}")
+
+    plantilla_df = build_template_df()
+    plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
+    plantilla_df.to_excel(plantilla_path, index=False)
+
+    with open(plantilla_path, "rb") as f:
+        st.download_button(
+            "Descargar plantilla",
+            data=f,
+            file_name="plantilla_envios.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+
+    if st.button("Guardar configuración", use_container_width=True):
+        missing = [
+            st.session_state.smtp_host,
+            st.session_state.smtp_port,
+            st.session_state.smtp_user,
+            st.session_state.smtp_pass,
+            st.session_state.from_name,
+            st.session_state.from_email,
+        ]
+        if any(not str(x).strip() for x in missing):
+            st.warning("Complete todos los campos de configuración.")
+        else:
+            save_config({
+                "provider": st.session_state.provider,
+                "smtp_host": st.session_state.smtp_host.strip(),
+                "smtp_port": str(st.session_state.smtp_port).strip(),
+                "smtp_user": st.session_state.smtp_user.strip(),
+                "smtp_pass": st.session_state.smtp_pass.strip(),
+                "from_name": st.session_state.from_name.strip(),
+                "from_email": st.session_state.from_email.strip(),
+            })
+            st.success("Configuración guardada correctamente.")
+            st.rerun()
+
+    enviar_disabled = len(issues) > 0
+
+    if st.button("Enviar correos", use_container_width=True, disabled=enviar_disabled):
+        try:
+            if st.session_state.mailer_proc is None or st.session_state.mailer_proc.poll() is not None:
+                st.session_state.mailer_proc = launch_mailer()
+                st.success("Sistema de envío iniciado.")
+            else:
+                st.info("El sistema ya está en ejecución.")
+        except Exception as e:
+            st.error(f"No se pudo iniciar el sistema: {e}")
+
+    if st.button("Detener envíos", use_container_width=True):
+        if st.session_state.mailer_proc is not None and st.session_state.mailer_proc.poll() is None:
+            st.session_state.mailer_proc.terminate()
+            st.success("Sistema de envío detenido.")
+        else:
+            st.info("No hay envío activo.")
+
+    if st.button("Vaciar registros", use_container_width=True):
+        save_csv(pd.DataFrame(columns=COLUMNAS))
+        st.success("Registros eliminados.")
+        st.rerun()
+
+    if st.button("Actualizar", use_container_width=True):
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### Estado del sistema")
+
+    if st.session_state.mailer_proc is not None and st.session_state.mailer_proc.poll() is None:
+        st.success("Enviando")
+    else:
+        st.info("Detenido")
     try:
         df_raw = read_input_file(uploaded)
         df_norm = normalize_dataframe(df_raw)
@@ -615,8 +706,8 @@ if uploaded is not None:
         st.info("Detenido")
 
 tabs = st.tabs(["Configuración", "Correos", "Instrucciones", "Registros", "Correo Específico"])
-
 with tabs[0]:
+
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Configuración del correo remitente</div>', unsafe_allow_html=True)
 
@@ -628,54 +719,42 @@ with tabs[0]:
     )
 
     c1, c2 = st.columns(2)
+
     with c1:
         st.text_input("Servidor SMTP", key="smtp_host")
         st.text_input("Correo remitente", key="smtp_user")
         st.text_input("Nombre visible", key="from_name")
+
     with c2:
         st.text_input("Puerto", key="smtp_port")
         st.text_input("Clave", key="smtp_pass", type="password")
         st.text_input("Email visible", key="from_email")
 
-    st.markdown("""
-<div class="help-card">
-<b>Cómo completar esta parte</b><br><br>
-<b>Si usa Gmail:</b><br>
-1. Escriba su correo Gmail.<br>
-2. En la clave, escriba la clave especial de 16 caracteres de Google.<br><br>
-<b>Si usa Outlook, Hotmail o Microsoft:</b><br>
-1. Escriba su correo.<br>
-2. En la clave, escriba la contraseña de esa cuenta.<br><br>
-Cuando termine, haga clic en <b>Guardar configuración</b>.
-</div>
-""", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.write("")
+
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
+
+    asunto_global = st.text_input("Asunto del correo")
+
+    mensaje_global = st.text_area(
+        "Mensaje del correo",
+        height=220
+    )
+
+    col_fecha, col_hora = st.columns(2)
+
+    with col_fecha:
+        fecha_envio = st.date_input("Fecha de envío")
+
+    with col_hora:
+        hora_envio = st.time_input("Hora de envío")
+
+    send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
 
     st.markdown('</div>', unsafe_allow_html=True)
-st.write("")
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
-
-asunto_global = st.text_input(
-    "Asunto del correo"
-)
-
-mensaje_global = st.text_area(
-    "Mensaje del correo",
-    height=220
-)
-
-col_fecha, col_hora = st.columns(2)
-
-with col_fecha:
-    fecha_envio = st.date_input("Fecha de envío")
-
-with col_hora:
-    hora_envio = st.time_input("Hora de envío")
-
-send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
-
-st.markdown('</div>', unsafe_allow_html=True)
-
 
 st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
