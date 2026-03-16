@@ -702,13 +702,9 @@ st.markdown(
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-
-
-
-
-    st.write("")
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
+st.write("")
+st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
 
     if issues:
         for issue in issues:
