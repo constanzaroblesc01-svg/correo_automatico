@@ -524,17 +524,17 @@ with st.sidebar:
         type=["xlsx", "csv"],
         help="Puede cargar un archivo Excel (.xlsx) o CSV."
     )
-    if uploaded is not None:
-        try:
-            df_raw = read_input_file(uploaded)
-            df_norm = normalize_dataframe(df_raw)
-            
-                df_norm["asunto"] = asunto_global
-                df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
-                df_norm["send_at"] = send_at_global
-                df_norm["estado"] = "PENDIENTE"
+if uploaded is not None:
+    try:
+        df_raw = read_input_file(uploaded)
+        df_norm = normalize_dataframe(df_raw)
 
-                   if df_norm.empty:
+        df_norm["asunto"] = asunto_global
+        df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
+        df_norm["send_at"] = send_at_global
+        df_norm["estado"] = "PENDIENTE"
+
+        if df_norm.empty:
             st.warning("El archivo no contiene datos válidos.")
         else:
             save_csv(df_norm)
