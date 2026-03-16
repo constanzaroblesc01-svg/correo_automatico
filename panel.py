@@ -522,7 +522,8 @@ with st.sidebar:
     uploaded = st.file_uploader(
         "Seleccione su archivo Excel o CSV",
         type=["xlsx", "csv"],
-        help="Puede cargar un archivo Excel (.xlsx) o CSV."
+        help="Puede cargar un archivo Excel (.xlsx) o CSV.",
+        key="sidebar_file_uploader"
     )
 
     if uploaded is not None:
@@ -550,16 +551,16 @@ with st.sidebar:
     plantilla_df.to_excel(plantilla_path, index=False)
 
     with open(plantilla_path, "rb") as f:
-       st.download_button(
+        st.download_button(
             "Descargar plantilla",
             data=f,
             file_name="plantilla_envios.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
-            key="download_template_button"
+            key="sidebar_download_template"
         )
 
-    if st.button("Guardar configuración", use_container_width=True):
+    if st.button("Guardar configuración", use_container_width=True, key="sidebar_save_config"):
         missing = [
             st.session_state.smtp_host,
             st.session_state.smtp_port,
@@ -585,7 +586,12 @@ with st.sidebar:
 
     enviar_disabled = len(issues) > 0
 
-    if st.button("Enviar correos", use_container_width=True, disabled=enviar_disabled):
+    if st.button(
+        "Enviar correos",
+        use_container_width=True,
+        disabled=enviar_disabled,
+        key="sidebar_send_emails"
+    ):
         try:
             if st.session_state.mailer_proc is None or st.session_state.mailer_proc.poll() is not None:
                 st.session_state.mailer_proc = launch_mailer()
@@ -595,19 +601,19 @@ with st.sidebar:
         except Exception as e:
             st.error(f"No se pudo iniciar el sistema: {e}")
 
-    if st.button("Detener envíos", use_container_width=True):
+    if st.button("Detener envíos", use_container_width=True, key="sidebar_stop_emails"):
         if st.session_state.mailer_proc is not None and st.session_state.mailer_proc.poll() is None:
             st.session_state.mailer_proc.terminate()
             st.success("Sistema de envío detenido.")
         else:
             st.info("No hay envío activo.")
 
-    if st.button("Vaciar registros", use_container_width=True):
+    if st.button("Vaciar registros", use_container_width=True, key="sidebar_clear_records"):
         save_csv(pd.DataFrame(columns=COLUMNAS))
         st.success("Registros eliminados.")
         st.rerun()
 
-    if st.button("Actualizar", use_container_width=True):
+    if st.button("Actualizar", use_container_width=True, key="sidebar_refresh"):
         st.rerun()
 
     st.markdown("---")
@@ -738,20 +744,21 @@ with tabs[0]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
 
-    asunto_global = st.text_input("Asunto del correo")
+    asunto_global = st.text_input("Asunto del correo", key="contenido_asunto_global")
 
     mensaje_global = st.text_area(
-        "Mensaje del correo",
-        height=220
+    "Mensaje del correo",
+    height=220,
+    key="contenido_mensaje_global"
     )
 
     col_fecha, col_hora = st.columns(2)
 
     with col_fecha:
-        fecha_envio = st.date_input("Fecha de envío")
+        fecha_envio = st.date_input("Fecha de envío", key="contenido_fecha_envio")
 
     with col_hora:
-        hora_envio = st.time_input("Hora de envío")
+        hora_envio = st.time_input("Hora de envío", key="contenido_hora_envio")
 
     send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
 
@@ -763,9 +770,9 @@ st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html
 
 banner_file = st.file_uploader(
     "Subir banner del correo",
-    type=["png", "jpg", "jpeg"]
+    type=["png", "jpg", "jpeg"],
+    key="contenido_banner_file"
 )
-
 st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -864,10 +871,11 @@ with tabs[4]:
     if not vista.empty:
 
         idx = st.selectbox(
-            "Seleccione un registro para ver el detalle",
-            vista.index,
-            format_func=lambda x: f"{vista.loc[x, 'nombre']} - {vista.loc[x, 'email']}"
-        )
+    "Seleccione un registro para ver el detalle",
+    vista.index,
+    format_func=lambda x: f"{vista.loc[x, 'nombre']} - {vista.loc[x, 'email']}",
+    key="detalle_select_registro"
+     )
 
         row = vista.loc[idx]
 
