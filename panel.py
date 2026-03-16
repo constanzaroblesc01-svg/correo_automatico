@@ -739,6 +739,52 @@ with tabs[0]:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+st.write("")
+st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
+
+if issues:
+    for issue in issues:
+        st.error(issue)
+else:
+    st.success("Todo está listo para enviar. Puede usar el botón 'Enviar correos' del lado izquierdo.")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+with tabs[1]:
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Correos cargados</div>', unsafe_allow_html=True)
+
+    f1, f2 = st.columns([1, 2])
+    with f1:
+        filtro = st.selectbox("Filtrar por estado", ["TODOS", "PENDIENTE", "ENVIADO", "ERROR"])
+    with f2:
+        texto = st.text_input("Buscar por nombre, correo o asunto")
+
+    vista = df.copy()
+
+    if filtro != "TODOS":
+        vista = vista[vista["estado"].astype(str).str.upper() == filtro]
+
+    if texto.strip():
+        t = texto.strip().lower()
+        mask = (
+            vista["email"].astype(str).str.lower().str.contains(t, na=False) |
+            vista["nombre"].astype(str).str.lower().str.contains(t, na=False) |
+            vista["asunto"].astype(str).str.lower().str.contains(t, na=False)
+        )
+        vista = vista[mask]
+
+    tabla = vista[["id", "nombre", "email", "asunto", "send_at", "estado"]].copy() if not vista.empty else pd.DataFrame(
+        columns=["id", "nombre", "email", "asunto", "send_at", "estado"]
+    )
+    tabla.columns = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
+
+    st.dataframe(tabla, use_container_width=True, height=430)
+
+    st.write("") 
+    st.markdown('</div>', unsafe_allow_html=True)
+
     st.write("")
 
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -788,52 +834,6 @@ st.markdown(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
-
-st.write("")
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
-
-if issues:
-    for issue in issues:
-        st.error(issue)
-else:
-    st.success("Todo está listo para enviar. Puede usar el botón 'Enviar correos' del lado izquierdo.")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-with tabs[1]:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Correos cargados</div>', unsafe_allow_html=True)
-
-    f1, f2 = st.columns([1, 2])
-    with f1:
-        filtro = st.selectbox("Filtrar por estado", ["TODOS", "PENDIENTE", "ENVIADO", "ERROR"])
-    with f2:
-        texto = st.text_input("Buscar por nombre, correo o asunto")
-
-    vista = df.copy()
-
-    if filtro != "TODOS":
-        vista = vista[vista["estado"].astype(str).str.upper() == filtro]
-
-    if texto.strip():
-        t = texto.strip().lower()
-        mask = (
-            vista["email"].astype(str).str.lower().str.contains(t, na=False) |
-            vista["nombre"].astype(str).str.lower().str.contains(t, na=False) |
-            vista["asunto"].astype(str).str.lower().str.contains(t, na=False)
-        )
-        vista = vista[mask]
-
-    tabla = vista[["id", "nombre", "email", "asunto", "send_at", "estado"]].copy() if not vista.empty else pd.DataFrame(
-        columns=["id", "nombre", "email", "asunto", "send_at", "estado"]
-    )
-    tabla.columns = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
-
-    st.dataframe(tabla, use_container_width=True, height=430)
-
-    st.write("") 
-    st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[2]:
     st.markdown('<div class="glass-card instructions">', unsafe_allow_html=True)
