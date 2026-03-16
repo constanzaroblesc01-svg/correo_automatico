@@ -529,14 +529,19 @@ with st.sidebar:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
 
-if "asunto_global" in st.session_state:
-    df_norm["asunto"] = st.session_state.asunto_global
-
-if "mensaje_global" in st.session_state:
-    df_norm["mensaje"] = st.session_state.mensaje_global + banner_html(banner_file)
-
+df_norm["asunto"] = asunto_global
+df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
 df_norm["send_at"] = send_at_global
 df_norm["estado"] = "PENDIENTE"
+
+            if df_norm.empty:
+                st.warning("El archivo no contiene datos válidos.")
+            else:
+                save_csv(df_norm)
+                st.success("Archivo cargado correctamente.")
+                st.rerun()
+        except Exception as e:
+            st.error(f"No se pudo cargar el archivo: {e}")
 
     plantilla_df = build_template_df()
     plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
@@ -614,7 +619,6 @@ with tabs[0]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Configuración del correo remitente</div>', unsafe_allow_html=True)
 
-
     st.selectbox(
         "Proveedor de correo",
         list(PROVEEDORES.keys()),
@@ -646,22 +650,17 @@ Cuando termine, haga clic en <b>Guardar configuración</b>.
 """, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-    st.write("")
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
 
 asunto_global = st.text_input(
-    "Asunto del correo",
-    key="asunto_global"
+    "Asunto del correo"
 )
 
 mensaje_global = st.text_area(
     "Mensaje del correo",
-    height=220,
-    key="mensaje_global"
+    height=220
 )
 
 col_fecha, col_hora = st.columns(2)
@@ -675,6 +674,8 @@ with col_hora:
 send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
 
 st.markdown('</div>', unsafe_allow_html=True)
+
+
 st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
@@ -685,6 +686,7 @@ banner_file = st.file_uploader(
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -703,8 +705,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 
 
-
-
+    st.write("")
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Revisión antes de enviar</div>', unsafe_allow_html=True)
 
     if issues:
@@ -795,6 +797,4 @@ with tabs[3]:
     st.text_area("Logs", value=get_logs(), height=520)
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 
