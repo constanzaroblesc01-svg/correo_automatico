@@ -528,6 +528,7 @@ with st.sidebar:
         try:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
+            
                 df_norm["asunto"] = asunto_global
                 df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
                 df_norm["send_at"] = send_at_global
