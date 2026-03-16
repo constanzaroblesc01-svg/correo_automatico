@@ -614,7 +614,7 @@ if uploaded is not None:
     else:
         st.info("Detenido")
 
-tabs = st.tabs(["Configuración", "Correos", "Instrucciones", "Registros"])
+tabs = st.tabs(["Configuración", "Correos", "Instrucciones", "Registros", "Correo Específico"])
 
 with tabs[0]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -745,28 +745,7 @@ with tabs[1]:
 
     st.dataframe(tabla, use_container_width=True, height=430)
 
-    st.write("")
-    st.subheader("Detalle del correo")
-
-    if not vista.empty:
-        idx = st.selectbox(
-            "Seleccione un registro para ver el detalle",
-            vista.index,
-            format_func=lambda x: f"{vista.loc[x, 'nombre']} - {vista.loc[x, 'email']}"
-        )
-        row = vista.loc[idx]
-
-        d1, d2 = st.columns([2, 1])
-        with d1:
-            st.text_area("Mensaje", value=str(row.get("mensaje", "")), height=220)
-            st.text_area("Último error", value=str(row.get("ultimo_error", "")), height=140)
-        with d2:
-            st.text_input("Adjunto", value=str(row.get("adjunto", "")))
-            st.text_input("Reintentos", value=str(row.get("reintentos", "")))
-            st.text_input("Estado", value=str(row.get("estado", "")))
-    else:
-        st.info("No hay registros para mostrar.")
-
+    st.write("") 
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[2]:
@@ -795,3 +774,33 @@ with tabs[3]:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+with tabs[4]:
+
+    st.subheader("Detalle del correo")
+
+    df = read_csv()
+    vista = df.copy()
+
+    if not vista.empty:
+
+        idx = st.selectbox(
+            "Seleccione un registro para ver el detalle",
+            vista.index,
+            format_func=lambda x: f"{vista.loc[x, 'nombre']} - {vista.loc[x, 'email']}"
+        )
+
+        row = vista.loc[idx]
+
+        d1, d2 = st.columns([2, 1])
+
+        with d1:
+            st.text_area("Mensaje", value=str(row.get("mensaje", "")), height=220)
+            st.text_area("Último error", value=str(row.get("ultimo_error", "")), height=140)
+
+        with d2:
+            st.text_input("Adjunto", value=str(row.get("adjunto", "")))
+            st.text_input("Reintentos", value=str(row.get("reintentos", "")))
+            st.text_input("Estado", value=str(row.get("estado", "")))
+
+    else:
+        st.info("No hay registros para mostrar.")
