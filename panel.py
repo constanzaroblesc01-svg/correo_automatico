@@ -550,12 +550,13 @@ with st.sidebar:
     plantilla_df.to_excel(plantilla_path, index=False)
 
     with open(plantilla_path, "rb") as f:
-        st.download_button(
+       st.download_button(
             "Descargar plantilla",
             data=f,
             file_name="plantilla_envios.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
+            use_container_width=True,
+            key="download_template_button"
         )
 
     if st.button("Guardar configuración", use_container_width=True):
