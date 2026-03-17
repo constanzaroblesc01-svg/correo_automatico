@@ -127,13 +127,7 @@ def normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     for col in COLUMNAS:
         new_df[col] = new_df[col].fillna("").astype(str)
 
-    new_df = new_df[
-        ~(
-            (new_df["email"].str.strip() == "") &
-            (new_df["asunto"].str.strip() == "") &
-            (new_df["mensaje"].str.strip() == "")
-        )
-    ].copy()
+    df = df[df["email"].astype(str).str.strip() != ""]
 
     if not new_df.empty:
         new_df["estado"] = new_df["estado"].replace("", "PENDIENTE").str.upper()
