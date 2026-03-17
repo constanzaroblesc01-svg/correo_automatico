@@ -685,11 +685,11 @@ with tabs[1]:
         
         tabla = vista[columnas_existentes].copy()
     
-    if tabla.empty:
-        st.warning("La tabla está vacía, pero hay registros en el sistema")
-    else:
-        nombres = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
-        tabla.columns = nombres[:len(tabla.columns)]
+        if tabla.empty:
+            st.warning("La tabla está vacía, pero hay registros en el sistema")
+        else:
+            nombres = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
+            tabla.columns = nombres[:len(tabla.columns)]
     
     st.dataframe(tabla, use_container_width=True, height=430)
 
