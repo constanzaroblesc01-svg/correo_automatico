@@ -40,7 +40,18 @@ def banner_html(file):
     if file is None:
         return ""
 
+    def banner_html(file):
+    if file is None:
+        return ""
+
+    file.seek(0)  # 🔥 clave: reinicia el puntero
+
     data = base64.b64encode(file.read()).decode()
+
+    return f"""
+    <br><br>
+    <img src="data:image/png;base64,{data}" style="max-width:600px;border-radius:10px;">
+    """
 
     return f"""
     <br><br>
@@ -527,109 +538,13 @@ with st.sidebar:
     )
 
     if uploaded is not None:
-        try:
-            df_raw = read_input_file(uploaded)
-            df_norm = normalize_dataframe(df_raw)
-            
-            df_norm["asunto"] = st.session_state.get("asunto_global", "")
-            df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
-            df_norm["send_at"] = st.session_state.get("send_at_global", "")
-            df_norm["estado"] = "PENDIENTE"
-
-            if df_norm.empty:
-                st.warning("El archivo no contiene datos válidos.")
-            else:
-                save_csv(df_norm)
-                st.success("Archivo cargado correctamente.")
-                st.rerun()
-
-        except Exception as e:
-            st.error(f"No se pudo cargar el archivo: {e}")
-
-    plantilla_df = build_template_df()
-    plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
-    plantilla_df.to_excel(plantilla_path, index=False)
-
-    with open(plantilla_path, "rb") as f:
-        st.download_button(
-            "Descargar plantilla",
-            data=f,
-            file_name="plantilla_envios.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-            key="sidebar_download_template"
-        )
-
-    if st.button("Guardar configuración", use_container_width=True, key="sidebar_save_config"):
-        missing = [
-            st.session_state.smtp_host,
-            st.session_state.smtp_port,
-            st.session_state.smtp_user,
-            st.session_state.smtp_pass,
-            st.session_state.from_name,
-            st.session_state.from_email,
-        ]
-        if any(not str(x).strip() for x in missing):
-            st.warning("Complete todos los campos de configuración.")
-        else:
-            save_config({
-                "provider": st.session_state.provider,
-                "smtp_host": st.session_state.smtp_host.strip(),
-                "smtp_port": str(st.session_state.smtp_port).strip(),
-                "smtp_user": st.session_state.smtp_user.strip(),
-                "smtp_pass": st.session_state.smtp_pass.strip(),
-                "from_name": st.session_state.from_name.strip(),
-                "from_email": st.session_state.from_email.strip(),
-            })
-            st.success("Configuración guardada correctamente.")
-            st.rerun()
-
-    enviar_disabled = len(issues) > 0
-
-    if st.button(
-        "Enviar correos",
-        use_container_width=True,
-        disabled=enviar_disabled,
-        key="sidebar_send_emails"
-    ):
-        try:
-            if st.session_state.mailer_proc is None or st.session_state.mailer_proc.poll() is not None:
-                st.session_state.mailer_proc = launch_mailer()
-                st.success("Sistema de envío iniciado.")
-            else:
-                st.info("El sistema ya está en ejecución.")
-        except Exception as e:
-            st.error(f"No se pudo iniciar el sistema: {e}")
-
-    if st.button("Detener envíos", use_container_width=True, key="sidebar_stop_emails"):
-        if st.session_state.mailer_proc is not None and st.session_state.mailer_proc.poll() is None:
-            st.session_state.mailer_proc.terminate()
-            st.success("Sistema de envío detenido.")
-        else:
-            st.info("No hay envío activo.")
-
-    if st.button("Vaciar registros", use_container_width=True, key="sidebar_clear_records"):
-        save_csv(pd.DataFrame(columns=COLUMNAS))
-        st.success("Registros eliminados.")
-        st.rerun()
-
-    if st.button("Actualizar", use_container_width=True, key="sidebar_refresh"):
-        st.rerun()
-
-    st.markdown("---")
-    st.markdown("### Estado del sistema")
-
-    if st.session_state.mailer_proc is not None and st.session_state.mailer_proc.poll() is None:
-        st.success("Enviando")
-    else:
-        st.info("Detenido")
     try:
         df_raw = read_input_file(uploaded)
         df_norm = normalize_dataframe(df_raw)
 
-        df_norm["asunto"] = asunto_global
-        df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
-        df_norm["send_at"] = send_at_global
+        df_norm["asunto"] = st.session_state.get("asunto_global", "")
+        df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
+        df_norm["send_at"] = st.session_state.get("send_at_global", "")
         df_norm["estado"] = "PENDIENTE"
 
         if df_norm.empty:
@@ -740,12 +655,18 @@ with tabs[0]:
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[1]:
+
+    # -------------------------
+    # TABLA
+    # -------------------------
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Correos cargados</div>', unsafe_allow_html=True)
 
     f1, f2 = st.columns([1, 2])
+
     with f1:
         filtro = st.selectbox("Filtrar por estado", ["TODOS", "PENDIENTE", "ENVIADO", "ERROR"])
+
     with f2:
         texto = st.text_input("Buscar por nombre, correo o asunto")
 
@@ -766,15 +687,17 @@ with tabs[1]:
     tabla = vista[["id", "nombre", "email", "asunto", "send_at", "estado"]].copy() if not vista.empty else pd.DataFrame(
         columns=["id", "nombre", "email", "asunto", "send_at", "estado"]
     )
+
     tabla.columns = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
 
     st.dataframe(tabla, use_container_width=True, height=430)
 
-    st.write("") 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.write("")
 
+    # -------------------------
+    # CONTENIDO
+    # -------------------------
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
 
@@ -793,30 +716,36 @@ with tabs[1]:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-st.write("")
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
 
-banner_file = st.file_uploader(
-    "Subir banner del correo",
-    type=["png", "jpg", "jpeg"],
-    key="banner_file"
-)
-st.markdown('</div>', unsafe_allow_html=True)
+    # -------------------------
+    # BANNER
+    # -------------------------
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
+
+    banner_file = st.file_uploader(
+        "Subir banner del correo",
+        type=["png", "jpg", "jpeg"],
+        key="banner_file"
+    )
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
-st.write("")
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Vista previa del correo</div>', unsafe_allow_html=True)
+    # -------------------------
+    # VISTA PREVIA
+    # -------------------------
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Vista previa del correo</div>', unsafe_allow_html=True)
 
-firma = banner_html(banner_file)
+    firma = banner_html(st.session_state.get("banner_file"))
 
-st.markdown(
-    mensaje_global + firma,
-    unsafe_allow_html=True
-)
+    st.markdown(
+        st.session_state.get("mensaje_global", "") + firma,
+        unsafe_allow_html=True
+    )
 
-st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[2]:
     st.markdown('<div class="glass-card instructions">', unsafe_allow_html=True)
@@ -848,17 +777,16 @@ with tabs[4]:
 
     st.subheader("Detalle del correo")
 
-    df = read_csv()
     vista = df.copy()
 
     if not vista.empty:
 
         idx = st.selectbox(
-    "Seleccione un registro para ver el detalle",
-    vista.index,
-    format_func=lambda x: f"{vista.loc[x, 'nombre']} - {vista.loc[x, 'email']}",
-    key="detalle_select_registro"
-     )
+            "Seleccione un registro para ver el detalle",
+            vista.index,
+            format_func=lambda x: f"{vista.loc[x, 'nombre']} - {vista.loc[x, 'email']}",
+            key="detalle_select_registro"
+        )
 
         row = vista.loc[idx]
 
