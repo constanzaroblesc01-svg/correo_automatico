@@ -691,9 +691,9 @@ with tabs[1]:
             nombres = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
             tabla.columns = nombres[:len(tabla.columns)]
     
-    st.dataframe(tabla, use_container_width=True, height=430)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.dataframe(tabla, use_container_width=True, height=430)
+    
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
     # -------------------------
