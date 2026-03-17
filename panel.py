@@ -49,12 +49,6 @@ def banner_html(file):
     <img src="data:image/png;base64,{data}" style="max-width:600px;border-radius:10px;">
     """
 
-    return f"""
-    <br><br>
-    <img src="data:image/png;base64,{data}" style="max-width:600px;border-radius:10px;">
-    """
-
-
 
 BASE_DIR = Path(__file__).resolve().parent
 CSV_FILE = BASE_DIR / "envios.csv"
@@ -534,24 +528,24 @@ with st.sidebar:
     )
 
     if uploaded is not None:
-    try:
-        df_raw = read_input_file(uploaded)
-        df_norm = normalize_dataframe(df_raw)
-
-        df_norm["asunto"] = st.session_state.get("asunto_global", "")
-        df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
-        df_norm["send_at"] = st.session_state.get("send_at_global", "")
-        df_norm["estado"] = "PENDIENTE"
-
-        if df_norm.empty:
-            st.warning("El archivo no contiene datos válidos.")
-        else:
-            save_csv(df_norm)
-            st.success("Archivo cargado correctamente.")
-            st.rerun()
-
-    except Exception as e:
-        st.error(f"No se pudo cargar el archivo: {e}")
+        try:
+            df_raw = read_input_file(uploaded)
+            df_norm = normalize_dataframe(df_raw)
+    
+            df_norm["asunto"] = st.session_state.get("asunto_global", "")
+            df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
+            df_norm["send_at"] = st.session_state.get("send_at_global", "")
+            df_norm["estado"] = "PENDIENTE"
+    
+            if df_norm.empty:
+                st.warning("El archivo no contiene datos válidos.")
+            else:
+                save_csv(df_norm)
+                st.success("Archivo cargado correctamente.")
+                st.rerun()
+    
+        except Exception as e:
+            st.error(f"No se pudo cargar el archivo: {e}")
 
     plantilla_df = build_template_df()
     plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
