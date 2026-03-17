@@ -648,8 +648,9 @@ with tabs[0]:
         st.text_input("Email visible", key="from_email")
 
     st.markdown('</div>', unsafe_allow_html=True)
+    
 with tabs[1]:
-with tabs[1]:
+
 
     # -------------------------
     # TABLA
