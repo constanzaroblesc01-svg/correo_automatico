@@ -530,10 +530,10 @@ with st.sidebar:
         try:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
-
-df_norm["asunto"] = st.session_state.get("asunto_global", "")
-df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
-df_norm["send_at"] = st.session_state.get("send_at_global", "")
+            
+            df_norm["asunto"] = st.session_state.get("asunto_global", "")
+            df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
+            df_norm["send_at"] = st.session_state.get("send_at_global", "")
             df_norm["estado"] = "PENDIENTE"
 
             if df_norm.empty:
