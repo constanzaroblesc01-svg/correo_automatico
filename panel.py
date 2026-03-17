@@ -675,31 +675,31 @@ with tabs[1]:
 if filtro != "TODOS":
     vista = vista[vista["estado"].astype(str).str.upper() == filtro]
 
-if texto.strip():
-    t = texto.strip().lower()
-    mask = (
-        vista["email"].astype(str).str.lower().str.contains(t, na=False) |
-        vista["nombre"].astype(str).str.lower().str.contains(t, na=False) |
-        vista["asunto"].astype(str).str.lower().str.contains(t, na=False)
-    )
-    vista = vista[mask]
-
-# 👇 ESTO VA FUERA DEL IF
-columnas = ["id", "nombre", "email", "asunto", "send_at", "estado"]
-
-columnas_existentes = [c for c in columnas if c in vista.columns]
-
-tabla = vista[columnas_existentes].copy()
-
-if tabla.empty:
-    st.warning("La tabla está vacía, pero hay registros en el sistema")
-else:
-    nombres = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
-    tabla.columns = nombres[:len(tabla.columns)]
-
-st.dataframe(tabla, use_container_width=True, height=430)
-
-st.markdown('</div>', unsafe_allow_html=True)
+    if texto.strip():
+        t = texto.strip().lower()
+        mask = (
+            vista["email"].astype(str).str.lower().str.contains(t, na=False) |
+            vista["nombre"].astype(str).str.lower().str.contains(t, na=False) |
+            vista["asunto"].astype(str).str.lower().str.contains(t, na=False)
+        )
+        vista = vista[mask]
+    
+    # 👇 ESTO VA FUERA DEL IF
+    columnas = ["id", "nombre", "email", "asunto", "send_at", "estado"]
+    
+    columnas_existentes = [c for c in columnas if c in vista.columns]
+    
+    tabla = vista[columnas_existentes].copy()
+    
+    if tabla.empty:
+        st.warning("La tabla está vacía, pero hay registros en el sistema")
+    else:
+        nombres = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
+        tabla.columns = nombres[:len(tabla.columns)]
+    
+    st.dataframe(tabla, use_container_width=True, height=430)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
     # CONTENIDO
