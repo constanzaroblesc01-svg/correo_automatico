@@ -522,6 +522,10 @@ with st.sidebar:
     )
 
     if uploaded is not None:
+
+    if not st.session_state.get("asunto_global") or not st.session_state.get("mensaje_global"):
+        st.error("Debes escribir asunto y mensaje antes de cargar el archivo")
+        st.stop()
         try:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
@@ -706,6 +710,11 @@ with tabs[1]:
         hora_envio = st.time_input("Hora de envío")
 
     st.session_state.send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
+    df_actual = read_csv()
+    
+    if not df_actual.empty:
+        df_actual.loc[df_actual["estado"] == "PENDIENTE", "send_at"] = st.session_state.send_at_global
+        save_csv(df_actual)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
