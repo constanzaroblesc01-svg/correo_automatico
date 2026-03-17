@@ -40,10 +40,6 @@ def banner_html(file):
     if file is None:
         return ""
 
-    def banner_html(file):
-    if file is None:
-        return ""
-
     file.seek(0)  # 🔥 clave: reinicia el puntero
 
     data = base64.b64encode(file.read()).decode()
