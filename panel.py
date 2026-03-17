@@ -648,7 +648,7 @@ with tabs[0]:
         st.text_input("Email visible", key="from_email")
 
     st.markdown('</div>', unsafe_allow_html=True)
-
+with tabs[1]:
 with tabs[1]:
 
     # -------------------------
@@ -670,11 +670,6 @@ with tabs[1]:
     if filtro != "TODOS":
         vista = vista[vista["estado"].astype(str).str.upper() == filtro]
 
-    vista = df.copy()
-
-if filtro != "TODOS":
-    vista = vista[vista["estado"].astype(str).str.upper() == filtro]
-
     if texto.strip():
         t = texto.strip().lower()
         mask = (
@@ -683,22 +678,19 @@ if filtro != "TODOS":
             vista["asunto"].astype(str).str.lower().str.contains(t, na=False)
         )
         vista = vista[mask]
-    
-    # 👇 ESTO VA FUERA DEL IF
+
     columnas = ["id", "nombre", "email", "asunto", "send_at", "estado"]
-    
     columnas_existentes = [c for c in columnas if c in vista.columns]
-    
+
     tabla = vista[columnas_existentes].copy()
-    
+
     if tabla.empty:
-        st.warning("La tabla está vacía, pero hay registros en el sistema")
+        st.warning("No hay datos para mostrar")
     else:
         nombres = ["ID", "Nombre", "Correo destino", "Asunto", "Programado para", "Estado"]
         tabla.columns = nombres[:len(tabla.columns)]
-    
-    st.dataframe(tabla, use_container_width=True, height=430)
-    
+        st.dataframe(tabla, use_container_width=True, height=430)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
@@ -713,15 +705,14 @@ if filtro != "TODOS":
     col_fecha, col_hora = st.columns(2)
 
     with col_fecha:
-        fecha_envio = st.date_input("Fecha de envío", key="contenido_fecha_envio")
+        fecha_envio = st.date_input("Fecha de envío")
 
     with col_hora:
-        hora_envio = st.time_input("Hora de envío", key="contenido_hora_envio")
+        hora_envio = st.time_input("Hora de envío")
 
     st.session_state.send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
 
     st.markdown('</div>', unsafe_allow_html=True)
-
 
     # -------------------------
     # BANNER
@@ -729,14 +720,12 @@ if filtro != "TODOS":
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
 
-    banner_file = st.file_uploader(
+    st.session_state.banner_file = st.file_uploader(
         "Subir banner del correo",
-        type=["png", "jpg", "jpeg"],
-        key="banner_file"
+        type=["png", "jpg", "jpeg"]
     )
 
     st.markdown('</div>', unsafe_allow_html=True)
-
 
     # -------------------------
     # VISTA PREVIA
@@ -753,6 +742,8 @@ if filtro != "TODOS":
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+
+    
 with tabs[2]:
     st.markdown('<div class="glass-card instructions">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Instrucciones paso a paso</div>', unsafe_allow_html=True)
