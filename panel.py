@@ -531,9 +531,9 @@ with st.sidebar:
             df_raw = read_input_file(uploaded)
             df_norm = normalize_dataframe(df_raw)
 
-            df_norm["asunto"] = asunto_global
-            df_norm["mensaje"] = mensaje_global + banner_html(banner_file)
-            df_norm["send_at"] = send_at_global
+  df_norm["asunto"] = st.session_state.get("asunto_global", "")
+df_norm["mensaje"] = st.session_state.get("mensaje_global", "") + banner_html(st.session_state.get("banner_file"))
+df_norm["send_at"] = st.session_state.get("send_at_global", "")
             df_norm["estado"] = "PENDIENTE"
 
             if df_norm.empty:
@@ -789,7 +789,7 @@ st.session_state.mensaje_global = st.text_area("Mensaje del correo", height=220)
     with col_hora:
         hora_envio = st.time_input("Hora de envío", key="contenido_hora_envio")
 
-    send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
+    st.session_state.send_at_global = f"{fecha_envio} {hora_envio.strftime('%H:%M')}"
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -797,11 +797,7 @@ st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
 
-banner_file = st.file_uploader(
-    "Subir banner del correo",
-    type=["png", "jpg", "jpeg"],
-    key="contenido_banner_file"
-)
+st.session_state.banner_file = st.file_uploader(...)
 st.markdown('</div>', unsafe_allow_html=True)
 
 
