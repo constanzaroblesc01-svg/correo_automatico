@@ -797,7 +797,11 @@ st.write("")
 st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
 
-st.session_state.banner_file = st.file_uploader(...)
+banner_file = st.file_uploader(
+    "Subir banner del correo",
+    type=["png", "jpg", "jpeg"],
+    key="banner_file"
+)
 st.markdown('</div>', unsafe_allow_html=True)
 
 
