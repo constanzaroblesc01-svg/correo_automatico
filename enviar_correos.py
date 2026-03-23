@@ -147,6 +147,11 @@ def build_message(row, config):
     <html>
     <body style="font-family:Arial;">
     {body}
+    
+    <br><br>
+    <img src="https://via.placeholder.com/600x150.png?text=Banner" 
+    style="max-width:600px;border-radius:10px;">
+    
     </body>
     </html>
     """, subtype="html")
