@@ -521,34 +521,39 @@ with st.sidebar:
         key="sidebar_file_uploader"
     )
 
-    if uploaded is not None:
+if uploaded is not None:
 
     if not st.session_state.get("asunto_global") or not st.session_state.get("mensaje_global"):
         st.error("Debes escribir asunto y mensaje antes de cargar el archivo")
         st.stop()
-        try:
-            df_raw = read_input_file(uploaded)
-            df_norm = normalize_dataframe(df_raw)
-    
-            if st.session_state.get("asunto_global"):
-               df_norm["asunto"] = st.session_state.get("asunto_global")
-            if st.session_state.get("mensaje_global"):
-                df_norm["mensaje"] = st.session_state.get("mensaje_global") + banner_html(st.session_state.get("banner_file"))
 
-            if st.session_state.get("send_at_global"):
-                df_norm["send_at"] = st.session_state.get("send_at_global")
-            
-            df_norm["estado"] = "PENDIENTE"
-                
-            if df_norm.empty:
-                st.warning("El archivo no contiene datos válidos.")
-            else:
-                save_csv(df_norm)
-                st.success("Archivo cargado correctamente.")
-                st.rerun()
-    
-        except Exception as e:
-            st.error(f"No se pudo cargar el archivo: {e}")
+    try:
+        df_raw = read_input_file(uploaded)
+        df_norm = normalize_dataframe(df_raw)
+
+        if st.session_state.get("asunto_global"):
+            df_norm["asunto"] = st.session_state.get("asunto_global")
+
+        if st.session_state.get("mensaje_global"):
+            df_norm["mensaje"] = (
+                st.session_state.get("mensaje_global")
+                + banner_html(st.session_state.get("banner_file"))
+            )
+
+        if st.session_state.get("send_at_global"):
+            df_norm["send_at"] = st.session_state.get("send_at_global")
+
+        df_norm["estado"] = "PENDIENTE"
+
+        if df_norm.empty:
+            st.warning("El archivo no contiene datos válidos.")
+        else:
+            save_csv(df_norm)
+            st.success("Archivo cargado correctamente.")
+            st.rerun()
+
+    except Exception as e:
+        st.error(f"No se pudo cargar el archivo: {e}")
 
     plantilla_df = build_template_df()
     plantilla_path = BASE_DIR / "plantilla_envios.xlsx"
