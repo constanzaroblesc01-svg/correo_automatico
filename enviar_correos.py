@@ -128,7 +128,15 @@ def build_message(row: pd.Series, config: dict) -> EmailMessage:
     msg["Subject"] = render_template(row["asunto"], row["nombre"], row["email"])
 
     body = render_template(row["mensaje"], row["nombre"], row["email"])
-    msg.set_content(body)
+    msg.set_content("Este correo requiere HTML")
+
+        msg.add_alternative(f"""
+        <html>
+        <body style="font-family:Arial;">
+        {body}
+        </body>
+        </html>
+        """, subtype="html")
 
     adjunto = str(row["adjunto"]).strip()
     if adjunto:
