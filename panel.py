@@ -37,6 +37,7 @@ check_login()
 # =========================
 BASE_DIR = Path(__file__).resolve().parent
 CSV_FILE = BASE_DIR / "envios.csv"
+CONFIG_FILE = BASE_DIR / "config.json"
 MAILER_FILE = BASE_DIR / "enviar_correos.py"
 
 COLUMNAS = [
@@ -51,12 +52,12 @@ def ensure_csv():
     if not CSV_FILE.exists():
         pd.DataFrame(columns=COLUMNAS).to_csv(CSV_FILE, index=False)
 
-def save_csv(df):
-    df.to_csv(CSV_FILE, index=False)
-
 def read_csv():
     ensure_csv()
     return pd.read_csv(CSV_FILE)
+
+def save_csv(df):
+    df.to_csv(CSV_FILE, index=False)
 
 def banner_html(file):
     if file is None:
@@ -68,12 +69,22 @@ def banner_html(file):
 def launch_mailer():
     return subprocess.Popen([sys.executable, str(MAILER_FILE)])
 
+def load_config():
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_config(data):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
 # =========================
-# UI
+# INICIO
 # =========================
 st.set_page_config(page_title="Correos", layout="wide")
 
-st.title("📨 Sistema de Correos Automáticos")
+df = read_csv()
 
 # =========================
 # SIDEBAR
@@ -85,10 +96,8 @@ with st.sidebar:
     uploaded = st.file_uploader("Subir Excel o CSV", type=["xlsx","csv"])
 
     if st.button("🚀 Enviar correos"):
-        st.session_state.start_send = True
-
-    if st.button("🛑 Detener"):
-        st.session_state.start_send = False
+        launch_mailer()
+        st.success("Mailer iniciado")
 
     if st.button("🧹 Limpiar registros"):
         save_csv(pd.DataFrame(columns=COLUMNAS))
@@ -96,95 +105,126 @@ with st.sidebar:
         st.rerun()
 
 # =========================
-# CONTENIDO PRINCIPAL
+# HEADER
 # =========================
-
-st.subheader("✉️ Contenido del correo")
-
-st.session_state.asunto = st.text_input(
-    "Asunto",
-    value=st.session_state.get("asunto","")
-)
-
-st.session_state.mensaje = st.text_area(
-    "Mensaje",
-    value=st.session_state.get("mensaje",""),
-    height=200
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    fecha = st.date_input("Fecha envío")
-
-with col2:
-    hora = st.time_input("Hora envío")
-
-send_at = f"{fecha} {hora.strftime('%H:%M')}"
-st.session_state.send_at = send_at
+st.title("📨 Sistema de Correos Automáticos")
 
 # =========================
-# BANNER
+# TABS
 # =========================
-st.subheader("🖼️ Banner (opcional)")
-banner = st.file_uploader("Subir imagen", type=["png","jpg","jpeg"])
-st.session_state.banner = banner
+tabs = st.tabs(["Configuración", "Correos", "Instrucciones", "Registros", "Detalle"])
 
 # =========================
-# CARGA ARCHIVO
+# TAB 1 CONFIG
 # =========================
-st.subheader("📂 Cargar contactos")
+with tabs[0]:
 
-if uploaded is not None:
+    st.subheader("Configuración SMTP")
 
-    if not st.session_state.asunto or not st.session_state.mensaje:
-        st.error("Debes escribir asunto y mensaje")
-        st.stop()
+    config = load_config()
 
-    try:
+    smtp_host = st.text_input("SMTP", value=config.get("smtp_host",""))
+    smtp_port = st.text_input("Puerto", value=config.get("smtp_port","587"))
+    smtp_user = st.text_input("Correo", value=config.get("smtp_user",""))
+    smtp_pass = st.text_input("Clave", type="password", value=config.get("smtp_pass",""))
+
+    from_name = st.text_input("Nombre visible", value=config.get("from_name",""))
+    from_email = st.text_input("Email visible", value=config.get("from_email",""))
+
+    if st.button("Guardar configuración"):
+        save_config({
+            "smtp_host": smtp_host,
+            "smtp_port": smtp_port,
+            "smtp_user": smtp_user,
+            "smtp_pass": smtp_pass,
+            "from_name": from_name,
+            "from_email": from_email
+        })
+        st.success("Guardado")
+
+# =========================
+# TAB 2 CORREOS
+# =========================
+with tabs[1]:
+
+    st.subheader("Contenido del correo")
+
+    st.session_state.asunto = st.text_input(
+        "Asunto",
+        value=st.session_state.get("asunto","")
+    )
+
+    st.session_state.mensaje = st.text_area(
+        "Mensaje",
+        value=st.session_state.get("mensaje",""),
+        height=200
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fecha = st.date_input("Fecha")
+
+    with col2:
+        hora = st.time_input("Hora")
+
+    st.session_state.send_at = f"{fecha} {hora.strftime('%H:%M')}"
+
+    st.subheader("Banner")
+    banner = st.file_uploader("Imagen", type=["png","jpg"])
+    st.session_state.banner = banner
+
+    st.subheader("Carga archivo")
+
+    if uploaded is not None:
+
+        if not st.session_state.asunto or not st.session_state.mensaje:
+            st.error("Completa asunto y mensaje")
+            st.stop()
+
         if uploaded.name.endswith(".xlsx"):
-            df = pd.read_excel(uploaded)
+            df_upload = pd.read_excel(uploaded)
         else:
-            df = pd.read_csv(uploaded)
+            df_upload = pd.read_csv(uploaded)
 
-        df["asunto"] = st.session_state.asunto
-        df["mensaje"] = st.session_state.mensaje + banner_html(st.session_state.banner)
-        df["send_at"] = st.session_state.send_at
-        df["estado"] = "PENDIENTE"
-        df["reintentos"] = 0
+        df_upload["asunto"] = st.session_state.asunto
+        df_upload["mensaje"] = st.session_state.mensaje + banner_html(st.session_state.banner)
+        df_upload["send_at"] = st.session_state.send_at
+        df_upload["estado"] = "PENDIENTE"
+        df_upload["reintentos"] = 0
 
-        save_csv(df)
-
-        st.success("Archivo cargado correctamente")
-
-    except Exception as e:
-        st.error(str(e))
+        save_csv(df_upload)
+        st.success("Archivo cargado")
 
 # =========================
-# VISTA PREVIA
+# TAB 3 INSTRUCCIONES
 # =========================
-st.subheader("👁️ Vista previa")
+with tabs[2]:
 
-st.markdown(
-    st.session_state.get("mensaje","") + banner_html(st.session_state.get("banner")),
-    unsafe_allow_html=True
-)
+    st.markdown("""
+    1. Configura tu correo  
+    2. Escribe asunto y mensaje  
+    3. Sube archivo  
+    4. Presiona enviar  
+    """)
 
 # =========================
-# TABLA
+# TAB 4 REGISTROS
 # =========================
-st.subheader("📊 Correos cargados")
+with tabs[3]:
 
-df = read_csv()
-
-if not df.empty:
     st.dataframe(df)
-else:
-    st.info("No hay correos cargados")
 
 # =========================
-# ENVÍO
+# TAB 5 DETALLE
 # =========================
-if st.session_state.get("start_send"):
-    st.success("Sistema de envío iniciado")
-    launch_mailer()
+with tabs[4]:
+
+    if not df.empty:
+        idx = st.selectbox("Selecciona correo", df.index)
+        row = df.loc[idx]
+
+        st.text_area("Mensaje", row.get("mensaje",""), height=200)
+        st.write("Estado:", row.get("estado"))
+    else:
+        st.info("Sin datos")
