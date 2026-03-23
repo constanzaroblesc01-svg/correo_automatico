@@ -1,5 +1,4 @@
 import streamlit as st
-
 # LOGIN SIMPLE
 def check_login():
     if "logged_in" not in st.session_state:
