@@ -238,12 +238,17 @@ def main():
     logging.info("MAILER INICIADO")
 
     while True:
-        try:
-            process_due_jobs()
-        except Exception as e:
-            logging.exception("Error general: %s", e)
+    try:
+        terminado = process_due_jobs()
 
-        time.sleep(CHECK_INTERVAL_SECONDS)
+        if terminado:
+            logging.info("✅ Todos los correos fueron enviados. Deteniendo sistema.")
+            break
+
+    except Exception as e:
+        logging.exception("Error general del proceso: %s", e)
+
+    time.sleep(CHECK_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()
