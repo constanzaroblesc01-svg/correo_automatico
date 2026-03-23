@@ -138,6 +138,8 @@ def build_message(row, config):
     msg["Subject"] = render_template(row["asunto"], row["nombre"], row["email"])
 
     body = render_template(row["mensaje"], row["nombre"], row["email"])
+    parrafos = body.split("\n")
+    body_html = "".join([f"<p>{p}</p>" for p in parrafos if p.strip() != ""])
 
     # TEXTO fallback
     msg.set_content("Este correo requiere HTML")
@@ -145,12 +147,11 @@ def build_message(row, config):
     # HTML REAL (FIX CLAVE)
     msg.add_alternative(f"""
     <html>
-    <body style="font-family:Arial;">
-    {body}
+    <body style="font-family:Arial; line-height:1.6;">
+    {body_html}
     </body>
     </html>
     """, subtype="html")
-
     # ADJUNTO
     adjunto = str(row["adjunto"]).strip()
     if adjunto:
