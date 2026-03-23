@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pandas as pd
 
+# =========================
+# CONFIG
+# =========================
 BASE_DIR = Path(__file__).resolve().parent
 CSV_FILE = BASE_DIR / "envios.csv"
 LOG_FILE = BASE_DIR / "mailer.log"
@@ -33,6 +36,9 @@ COLUMNAS = [
     "ultimo_error",
 ]
 
+# =========================
+# LOGGING
+# =========================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -42,7 +48,9 @@ logging.basicConfig(
     ],
 )
 
-
+# =========================
+# CONFIG LOAD
+# =========================
 def load_config() -> dict:
     if not CONFIG_FILE.exists():
         raise FileNotFoundError("No existe config.json. Debe guardar la configuración desde la aplicación.")
@@ -57,14 +65,15 @@ def load_config() -> dict:
 
     return config
 
-
-def ensure_csv() -> None:
+# =========================
+# CSV
+# =========================
+def ensure_csv():
     if not CSV_FILE.exists():
         df = pd.DataFrame(columns=COLUMNAS)
         df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
 
-
-def read_jobs() -> pd.DataFrame:
+def read_jobs():
     ensure_csv()
     df = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
 
@@ -78,7 +87,6 @@ def read_jobs() -> pd.DataFrame:
     for col in COLUMNAS:
         df[col] = df[col].fillna("")
 
-    # eliminar filas realmente vacías
     df = df[
         ~(
             (df["email"].astype(str).str.strip() == "") &
@@ -93,7 +101,6 @@ def read_jobs() -> pd.DataFrame:
     df["estado"] = df["estado"].astype(str).replace("", "PENDIENTE").str.upper()
     df["reintentos"] = pd.to_numeric(df["reintentos"], errors="coerce").fillna(0).astype(int)
 
-    # parseo robusto de fecha/hora
     df["send_at_dt"] = pd.to_datetime(df["send_at"], errors="coerce")
 
     invalidas = df["send_at_dt"].isna()
@@ -104,8 +111,7 @@ def read_jobs() -> pd.DataFrame:
 
     return df
 
-
-def save_jobs(df: pd.DataFrame) -> None:
+def save_jobs(df):
     df_to_save = df.copy()
 
     if "send_at_dt" in df_to_save.columns:
@@ -115,35 +121,44 @@ def save_jobs(df: pd.DataFrame) -> None:
     df_to_save = df_to_save[COLUMNAS]
     df_to_save.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
 
-
-def render_template(text: str, nombre: str, email: str) -> str:
+# =========================
+# TEMPLATE
+# =========================
+def render_template(text, nombre, email):
     text = str(text)
     return text.replace("{{nombre}}", str(nombre or "")).replace("{{email}}", str(email or ""))
 
-
-def build_message(row: pd.Series, config: dict) -> EmailMessage:
+# =========================
+# BUILD EMAIL
+# =========================
+def build_message(row, config):
     msg = EmailMessage()
     msg["From"] = f'{config["from_name"]} <{config["from_email"]}>'
     msg["To"] = str(row["email"]).strip()
     msg["Subject"] = render_template(row["asunto"], row["nombre"], row["email"])
 
     body = render_template(row["mensaje"], row["nombre"], row["email"])
+
+    # TEXTO fallback
     msg.set_content("Este correo requiere HTML")
 
-        msg.add_alternative(f"""
-        <html>
-        <body style="font-family:Arial;">
-        {body}
-        </body>
-        </html>
-        """, subtype="html")
+    # HTML REAL (FIX CLAVE)
+    msg.add_alternative(f"""
+    <html>
+    <body style="font-family:Arial;">
+    {body}
+    </body>
+    </html>
+    """, subtype="html")
 
+    # ADJUNTO
     adjunto = str(row["adjunto"]).strip()
     if adjunto:
         if not os.path.exists(adjunto):
             raise FileNotFoundError(f"Adjunto no encontrado: {adjunto}")
         with open(adjunto, "rb") as f:
             data = f.read()
+
         filename = os.path.basename(adjunto)
         msg.add_attachment(
             data,
@@ -154,8 +169,10 @@ def build_message(row: pd.Series, config: dict) -> EmailMessage:
 
     return msg
 
-
-def smtp_send(row: pd.Series, config: dict) -> None:
+# =========================
+# SMTP
+# =========================
+def smtp_send(row, config):
     msg = build_message(row, config)
     context = ssl.create_default_context()
 
@@ -166,8 +183,10 @@ def smtp_send(row: pd.Series, config: dict) -> None:
         server.login(config["smtp_user"], config["smtp_pass"])
         server.send_message(msg)
 
-
-def process_due_jobs() -> None:
+# =========================
+# PROCESS
+# =========================
+def process_due_jobs():
     config = load_config()
     df = read_jobs()
 
@@ -185,20 +204,16 @@ def process_due_jobs() -> None:
         return
 
     logging.info("Pendientes listos para enviar: %s", len(due_df))
-    sent_count = 0
 
     for idx, row in due_df.iterrows():
         try:
-            logging.info(
-                "Enviando a %s | asunto=%s | programado=%s",
-                row["email"],
-                row["asunto"],
-                row["send_at_dt"],
-            )
+            logging.info("Enviando a %s", row["email"])
+
             smtp_send(row, config)
+
             df.at[idx, "estado"] = "ENVIADO"
             df.at[idx, "ultimo_error"] = ""
-            sent_count += 1
+
             time.sleep(RATE_LIMIT_SECONDS)
 
         except Exception as e:
@@ -208,35 +223,27 @@ def process_due_jobs() -> None:
 
             if retries >= MAX_RETRIES:
                 df.at[idx, "estado"] = "ERROR"
-                logging.error("Fallo definitivo para %s: %s", row["email"], e)
+                logging.error("Error definitivo: %s", e)
             else:
                 df.at[idx, "send_at_dt"] = datetime.now() + timedelta(minutes=RETRY_MINUTES)
-                logging.warning(
-                    "Fallo temporal para %s. Reintento %s/%s en %s min. Error: %s",
-                    row["email"],
-                    retries,
-                    MAX_RETRIES,
-                    RETRY_MINUTES,
-                    e,
-                )
+                logging.warning("Reintentando en %s minutos", RETRY_MINUTES)
 
     save_jobs(df)
-    logging.info("Archivo actualizado. Enviados en este ciclo: %s", sent_count)
 
-
-def main() -> None:
+# =========================
+# MAIN LOOP
+# =========================
+def main():
     ensure_csv()
-    logging.info("MAILER NUEVO EJECUTANDO")
-    logging.info("Iniciando mailer programado...")
-    logging.info("CSV_FILE=%s", CSV_FILE)
+    logging.info("MAILER INICIADO")
 
     while True:
         try:
             process_due_jobs()
         except Exception as e:
-            logging.exception("Error general del proceso: %s", e)
-        time.sleep(CHECK_INTERVAL_SECONDS)
+            logging.exception("Error general: %s", e)
 
+        time.sleep(CHECK_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()
