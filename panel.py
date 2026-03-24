@@ -29,19 +29,6 @@ import os
 from datetime import datetime
 
 import pandas as pd
-import base64
-
-def banner_html(file):
-    if file is None:
-        return ""
-
-    file.seek(0)  # clave: reinicia el puntero
-    data = base64.b64encode(file.read()).decode()
-
-    return f"""
-    <br><br>
-    <img src="data:image/png;base64,{data}" style="max-width:600px;border-radius:10px;">
-    """
 
 BASE_DIR = Path(__file__).resolve().parent
 CSV_FILE = BASE_DIR / "envios.csv"
@@ -295,8 +282,6 @@ if "mensaje_global" not in st.session_state:
     st.session_state.mensaje_global = ""
 if "send_at_global" not in st.session_state:
     st.session_state.send_at_global = ""
-if "banner_file" not in st.session_state:
-    st.session_state.banner_file = None
 
 
 def on_provider_change():
@@ -611,11 +596,8 @@ if uploaded is not None:
             if st.session_state.get("asunto_global"):
                 df_norm["asunto"] = st.session_state.get("asunto_global")
 
-            if st.session_state.get("mensaje_global"):
-                df_norm["mensaje"] = (
-                    st.session_state.get("mensaje_global")
-                    + banner_html(st.session_state.get("banner_file"))
-                )
+           if st.session_state.get("mensaje_global"):
+                df_norm["mensaje"] = st.session_state.get("mensaje_global")
 
             if st.session_state.get("send_at_global"):
                 df_norm["send_at"] = st.session_state.get("send_at_global")
@@ -734,31 +716,12 @@ with tabs[1]:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # -------------------------
-    # BANNER
-    # -------------------------
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
-
-    st.session_state.banner_file = st.file_uploader(
-        "Subir banner del correo",
-        type=["png", "jpg", "jpeg"]
-    )
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
     # VISTA PREVIA
     # -------------------------
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Vista previa del correo</div>', unsafe_allow_html=True)
-
-    firma = banner_html(st.session_state.get("banner_file"))
-
-    st.markdown(
-        st.session_state.get("mensaje_global", "") + firma,
-        unsafe_allow_html=True
-    )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
