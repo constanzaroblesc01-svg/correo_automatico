@@ -139,61 +139,93 @@ def build_message(row, config):
 
     body = render_template(row["mensaje"], row["nombre"], row["email"])
     parrafos = body.split("\n")
-    body_html = "".join([f"<p>{p}</p>" for p in parrafos if p.strip() != ""])
+    body_html = "".join(f"<p>{p}</p>" for p in parrafos if p.strip())
 
-    # TEXTO fallback
-    msg.set_content("Este correo requiere HTML")
+    # texto alternativo
+    msg.set_content(body if body.strip() else "Mensaje sin contenido.")
 
-   def build_message(row, config):
-    msg = EmailMessage()
-    msg["From"] = f'{config["from_name"]} <{config["from_email"]}>'
-    msg["To"] = str(row["email"]).strip()
-    msg["Subject"] = render_template(row["asunto"], row["nombre"], row["email"])
+    adjunto = str(row.get("adjunto", "")).strip()
 
-    body = render_template(row["mensaje"], row["nombre"], row["email"])
-
-    # Formato bonito
-    parrafos = body.split("\n")
-    body_html = "".join([f"<p>{p}</p>" for p in parrafos if p.strip() != ""])
-
-    msg.set_content("Este correo requiere HTML")
-
-    # HTML base SIEMPRE
-    html = f"""
-    <html>
-    <body style="font-family:Arial; line-height:1.6;">
-    {body_html}
-    """
-
-    adjunto = str(row["adjunto"]).strip()
-
-    # 🔥 SI HAY IMAGEN → INSERTAR
-    if adjunto and os.path.exists(adjunto):
-        cid = "imagen1"
-
-        html += f"""
-        <br><br>
-        <img src="cid:{cid}" style="max-width:600px;border-radius:10px;">
+    # caso 1: no hay adjunto
+    if not adjunto:
+        html = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                {body_html}
+            </body>
+        </html>
         """
+        msg.add_alternative(html, subtype="html")
+        return msg
+
+    # caso 2: hay adjunto pero no existe
+    if not os.path.exists(adjunto):
+        raise FileNotFoundError(f"Adjunto no encontrado: {adjunto}")
+
+    ext = Path(adjunto).suffix.lower()
+    es_imagen = ext in [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+
+    # si es imagen, mostrarla dentro del correo
+    if es_imagen:
+        if ext == ".png":
+            subtype = "png"
+        elif ext in [".jpg", ".jpeg"]:
+            subtype = "jpeg"
+        elif ext == ".gif":
+            subtype = "gif"
+        elif ext == ".webp":
+            subtype = "webp"
+        else:
+            subtype = "octet-stream"
+
+        cid = "imagen_inline"
+
+        html = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                {body_html}
+                <br><br>
+                <img src="cid:{cid}" style="max-width:600px; border-radius:10px;">
+            </body>
+        </html>
+        """
+
+        msg.add_alternative(html, subtype="html")
 
         with open(adjunto, "rb") as f:
             data = f.read()
 
-        msg.add_related(
+        # importante: agregar la imagen a la parte HTML, no al mensaje raíz
+        html_part = msg.get_payload()[-1]
+        html_part.add_related(
             data,
             maintype="image",
-            subtype="png",
-            cid=cid
+            subtype=subtype,
+            cid=f"<{cid}>"
         )
 
-    # 🔥 cerrar HTML SIEMPRE
-    html += """
-    </body>
+        return msg
+
+    # si no es imagen, adjuntarlo como archivo normal
+    html = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            {body_html}
+        </body>
     </html>
     """
-
-    # 🔥 SIEMPRE agregar HTML
     msg.add_alternative(html, subtype="html")
+
+    with open(adjunto, "rb") as f:
+        data = f.read()
+
+    filename = os.path.basename(adjunto)
+    msg.add_attachment(
+        data,
+        maintype="application",
+        subtype="octet-stream",
+        filename=filename,
+    )
 
     return msg
 # =========================
