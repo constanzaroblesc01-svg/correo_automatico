@@ -616,6 +616,7 @@ if uploaded is not None:
                 banner = banner_html(st.session_state.get("banner_file"))
                 if banner:
                     df_norm["mensaje"] = mensaje_base + "<br><br>" + banner
+                    df_norm["adjunto"] = st.session_state.get("banner_path", "")
                 else:
                     df_norm["mensaje"] = mensaje_base
 
@@ -743,10 +744,18 @@ with tabs[1]:
     st.markdown('<div class="section-title">Firma / Banner</div>', unsafe_allow_html=True)
 
     st.session_state.banner_file = st.file_uploader(
-        "Subir banner del correo",
-        type=["png", "jpg", "jpeg"]
-    )
+    "Subir banner del correo",
+    type=["png", "jpg", "jpeg"]
+)
 
+    if st.session_state.banner_file:
+    banner_path = BASE_DIR / "banner.png"
+
+        with open(banner_path, "wb") as f:
+        f.write(st.session_state.banner_file.getbuffer())
+
+        st.session_state.banner_path = str(banner_path)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
