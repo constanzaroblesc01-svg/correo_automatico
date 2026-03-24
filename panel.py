@@ -612,10 +612,12 @@ if uploaded is not None:
                 df_norm["asunto"] = st.session_state.get("asunto_global")
 
             if st.session_state.get("mensaje_global"):
-                df_norm["mensaje"] = (
-                    st.session_state.get("mensaje_global")
-                    + banner_html(st.session_state.get("banner_file"))
-                )
+                mensaje_base = st.session_state.get("mensaje_global", "")
+                banner = banner_html(st.session_state.get("banner_file"))
+                if banner:
+                    df_norm["mensaje"] = mensaje_base + "<br><br>" + banner
+                else:
+                    df_norm["mensaje"] = mensaje_base
 
             if st.session_state.get("send_at_global"):
                 df_norm["send_at"] = st.session_state.get("send_at_global")
