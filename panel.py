@@ -720,9 +720,17 @@ with tabs[1]:
     # -------------------------
     # VISTA PREVIA
     # -------------------------
+    # -------------------------
+    # VISTA PREVIA
+    # -------------------------
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Vista previa del correo</div>', unsafe_allow_html=True)
-
+    
+    st.markdown(
+        st.session_state.get("mensaje_global", ""),
+        unsafe_allow_html=True
+    )
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[2]:
