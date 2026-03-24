@@ -706,14 +706,14 @@ with tabs[1]:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Contenido del correo</div>', unsafe_allow_html=True)
 
-    st.session_state.asunto_global = st.text_input(
-        "Asunto del correo",
-        value=st.session_state.get("asunto_global", "")
+    st.text_input(
+    "Asunto del correo",
+    key="asunto_global"
     )
 
-    st.session_state.mensaje_global = st.text_area(
+    st.text_area(
         "Mensaje del correo",
-        value=st.session_state.get("mensaje_global", ""),
+        key="mensaje_global",
         height=220
     )
 
