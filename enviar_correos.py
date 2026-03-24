@@ -161,13 +161,56 @@ def build_message(row, config):
             data = f.read()
 
         filename = os.path.basename(adjunto)
-        msg.add_attachment(
+        def build_message(row, config):
+    msg = EmailMessage()
+    msg["From"] = f'{config["from_name"]} <{config["from_email"]}>'
+    msg["To"] = str(row["email"]).strip()
+    msg["Subject"] = render_template(row["asunto"], row["nombre"], row["email"])
+
+    body = render_template(row["mensaje"], row["nombre"], row["email"])
+
+    # Formato bonito
+    parrafos = body.split("\n")
+    body_html = "".join([f"<p>{p}</p>" for p in parrafos if p.strip() != ""])
+
+    msg.set_content("Este correo requiere HTML")
+
+    # 🔥 HTML BASE
+    html = f"""
+    <html>
+    <body style="font-family:Arial; line-height:1.6;">
+    {body_html}
+    """
+
+    adjunto = str(row["adjunto"]).strip()
+
+    # 🔥 SI HAY IMAGEN → LA INSERTA EN EL CORREO
+    if adjunto and os.path.exists(adjunto):
+        cid = "imagen1"
+
+        html += f"""
+        <br><br>
+        <img src="cid:{cid}" style="max-width:600px;border-radius:10px;">
+        """
+
+        with open(adjunto, "rb") as f:
+            data = f.read()
+
+        msg.add_related(
             data,
-            maintype="application",
-            subtype="octet-stream",
-            filename=filename,
+            maintype="image",
+            subtype="png",
+            cid=cid
         )
 
+        html += """
+        </body>
+        </html>
+        """
+
+        msg.add_alternative(html, subtype="html")
+
+    
     return msg
 
 # =========================
