@@ -752,7 +752,7 @@ with tabs[1]:
         banner_path = BASE_DIR / "banner.png"
 
         with open(banner_path, "wb") as f:
-        f.write(st.session_state.banner_file.getbuffer())
+            f.write(st.session_state.banner_file.getbuffer())
 
         st.session_state.banner_path = str(banner_path)
     
