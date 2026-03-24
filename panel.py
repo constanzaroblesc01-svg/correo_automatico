@@ -749,7 +749,7 @@ with tabs[1]:
 )
 
     if st.session_state.banner_file:
-    banner_path = BASE_DIR / "banner.png"
+        banner_path = BASE_DIR / "banner.png"
 
         with open(banner_path, "wb") as f:
         f.write(st.session_state.banner_file.getbuffer())
