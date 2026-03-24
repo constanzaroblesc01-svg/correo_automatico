@@ -19,7 +19,7 @@ LOG_FILE = BASE_DIR / "mailer.log"
 CONFIG_FILE = BASE_DIR / "config.json"
 
 CHECK_INTERVAL_SECONDS = 20
-RATE_LIMIT_SECONDS = 3
+RATE_LIMIT_SECONDS = 8
 MAX_RETRIES = 3
 RETRY_MINUTES = 10
 
@@ -235,7 +235,7 @@ def smtp_send(row, config):
     msg = build_message(row, config)
     context = ssl.create_default_context()
 
-    with smtplib.SMTP(config["smtp_host"], int(config["smtp_port"]), timeout=60) as server:
+    with smtplib.SMTP(config["smtp_host"], int(config["smtp_port"]), timeout=120) as server:
         server.ehlo()
         server.starttls(context=context)
         server.ehlo()
