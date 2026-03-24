@@ -11,7 +11,7 @@ def check_login():
         password = st.text_input("Contraseña", type="password")
 
         if st.button("Ingresar"):
-            if usuario == "LaCasadelActor" and password == "correo2026":
+            if usuario == "constanzarobles" and password == "correo2026":
                 st.session_state.logged_in = True
                 st.rerun()
             else:
