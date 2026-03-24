@@ -144,24 +144,7 @@ def build_message(row, config):
     # TEXTO fallback
     msg.set_content("Este correo requiere HTML")
 
-    # HTML REAL (FIX CLAVE)
-    msg.add_alternative(f"""
-    <html>
-    <body style="font-family:Arial; line-height:1.6;">
-    {body_html}
-    </body>
-    </html>
-    """, subtype="html")
-    # ADJUNTO
-    adjunto = str(row["adjunto"]).strip()
-    if adjunto:
-        if not os.path.exists(adjunto):
-            raise FileNotFoundError(f"Adjunto no encontrado: {adjunto}")
-        with open(adjunto, "rb") as f:
-            data = f.read()
-
-        filename = os.path.basename(adjunto)
-        def build_message(row, config):
+   def build_message(row, config):
     msg = EmailMessage()
     msg["From"] = f'{config["from_name"]} <{config["from_email"]}>'
     msg["To"] = str(row["email"]).strip()
@@ -175,7 +158,7 @@ def build_message(row, config):
 
     msg.set_content("Este correo requiere HTML")
 
-    # 🔥 HTML BASE
+    # HTML base SIEMPRE
     html = f"""
     <html>
     <body style="font-family:Arial; line-height:1.6;">
@@ -184,7 +167,7 @@ def build_message(row, config):
 
     adjunto = str(row["adjunto"]).strip()
 
-    # 🔥 SI HAY IMAGEN → LA INSERTA EN EL CORREO
+    # 🔥 SI HAY IMAGEN → INSERTAR
     if adjunto and os.path.exists(adjunto):
         cid = "imagen1"
 
@@ -203,16 +186,16 @@ def build_message(row, config):
             cid=cid
         )
 
-        html += """
-        </body>
-        </html>
-        """
+    # 🔥 cerrar HTML SIEMPRE
+    html += """
+    </body>
+    </html>
+    """
 
-        msg.add_alternative(html, subtype="html")
+    # 🔥 SIEMPRE agregar HTML
+    msg.add_alternative(html, subtype="html")
 
-    
     return msg
-
 # =========================
 # SMTP
 # =========================
