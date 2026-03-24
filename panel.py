@@ -596,12 +596,13 @@ if uploaded is not None:
             if st.session_state.get("asunto_global"):
                 df_norm["asunto"] = st.session_state.get("asunto_global")
 
-           if st.session_state.get("mensaje_global"):
-                df_norm["mensaje"] = st.session_state.get("mensaje_global")
+            if st.session_state.get("mensaje_global"):
+                df_norm["mensaje"] = 
+                    st.session_state.get("mensaje_global")
+                   
 
             if st.session_state.get("send_at_global"):
                 df_norm["send_at"] = st.session_state.get("send_at_global")
-
             df_norm["estado"] = "PENDIENTE"
 
             if df_norm.empty:
